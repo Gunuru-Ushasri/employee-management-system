@@ -4,21 +4,24 @@ FROM openjdk:17-jdk-slim
 # Set the working directory
 WORKDIR /app
 
-# Copy Maven files first (to leverage Docker caching)
+# Copy only necessary files for caching efficiency
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
 
 # Copy the source code
 COPY src src
 
-# Make the Maven wrapper executable
+# Ensure the Maven wrapper is executable
 RUN chmod +x mvnw
 
-# Build the application (this ensures JAR creation)
+# Run the Maven build command (this will generate the JAR)
 RUN ./mvnw clean package -DskipTests
 
-# Copy the built JAR file
-COPY target/*.jar app.jar
+# Change to the target directory and list files (for debugging)
+RUN ls -la /app/target
+
+# Copy the JAR from the correct location
+COPY --from=0 /app/target/*.jar app.jar
 
 # Run the application
 CMD ["java", "-jar", "app.jar"]
