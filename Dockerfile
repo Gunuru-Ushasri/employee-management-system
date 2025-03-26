@@ -1,27 +1,26 @@
-# Use OpenJDK 17 as the base image
-FROM openjdk:17-jdk-slim
+# First Stage: Build the JAR
+FROM openjdk:17-jdk-slim AS build
 
-# Set the working directory
 WORKDIR /app
 
-# Copy only necessary files for caching efficiency
+# Copy Maven Wrapper and necessary files
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
-
-# Copy the source code
 COPY src src
 
 # Ensure the Maven wrapper is executable
 RUN chmod +x mvnw
 
-# Run the Maven build command (this will generate the JAR)
+# Build the application (JAR)
 RUN ./mvnw clean package -DskipTests
 
-# Change to the target directory and list files (for debugging)
-RUN ls -la /app/target
+# Second Stage: Run the application
+FROM openjdk:17-jdk-slim
 
-# Copy the JAR from the correct location
-COPY --from=0 /app/target/*.jar app.jar
+WORKDIR /app
+
+# Copy the JAR file from the build stage
+COPY --from=build /app/target/*.jar app.jar
 
 # Run the application
 CMD ["java", "-jar", "app.jar"]
