@@ -1,21 +1,21 @@
-# Use official Java runtime as base image
+# Use OpenJDK 17 as the base image
 FROM openjdk:17-jdk-slim
 
-# Set working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy built JAR file into the container
-COPY target/*.jar app.jar
+# Copy the Maven wrapper and pom.xml first (to leverage Docker caching)
+COPY mvnw pom.xml ./
+COPY .mvn .mvn
 
-# Expose the correct port (9090)
-EXPOSE 9090
+# Copy the source code
+COPY src src
 
-# Command to run the application
-CMD ["java", "-jar", "app.jar"]
+# Build the application (this step creates the JAR)
+RUN ./mvnw clean package -DskipTests
+
+# Copy the built JAR file
 COPY target/EmployeeBackend-0.0.1-SNAPSHOT.jar app.jar
 
-
-
-
-
-
+# Run the application
+CMD ["java", "-jar", "app.jar"]
